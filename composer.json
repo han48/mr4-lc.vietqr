@@ -1,0 +1,36 @@
+{
+    "name": "mr4-lc/vietqr",
+    "description": "Laravel VietQR payment (un-official)",
+    "type": "library",
+    "keywords": ["laravel-admin", "extension", "vietqr", "qr payment"],
+    "version": "0.0.1",
+    "homepage": "https://github.com/han48/mr4-lc.vietqr",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mr4",
+            "email": "zzz4everzzz@live.co.uk"
+        }
+    ],
+    "require": {
+        "php": ">=7.0.0",
+        "dsiddharth2/php-zxing": ">=1.0.0",
+        "simplesoftwareio/simple-qrcode": ">=4.0.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": ">=6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Mr4Lc\\VietQr\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Mr4Lc\\VietQr\\VietQrServiceProvider",
+                "SimpleSoftwareIO\\QrCode\\QrCodeServiceProvider"
+            ]
+        }
+    }
+}
