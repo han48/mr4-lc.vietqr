@@ -46,11 +46,18 @@ Hidden input: Random id
 ```
 ![Screenshot 2023-11-27 at 16 05 51](https://github.com/han48/mr4-lc.vietqr/assets/27817127/d2806912-e47d-4b8b-a0e9-81a07b55b82f)
 
-
 ```blade
 <x-mr4-lc.viet-qr />
 ```
 ![Screenshot 2023-11-27 at 16 06 14](https://github.com/han48/mr4-lc.vietqr/assets/27817127/5536377b-db20-4ce4-b74d-1854fcd0afff)
+
+API:
+```
+{{host}}api/vietqr
+```
+```
+{{host}}api/consumer-account-information
+```
 
 ## License
 Licensed under The [MIT License (MIT)](https://github.com/han48/mr4-lc.vietqr/blob/main/LICENSE).
