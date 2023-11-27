@@ -8,6 +8,7 @@ This is a `laravel` component that integrates [VietQR payment].
 Note:
 - This component don't using VietQR API, this component create QR CODE with EMVco.
 - Data tested with TPBank.
+- Version 0.0.1: can't create consumer account information, you need get this data from a sample QR Code.
 
 ## Screenshot
 
