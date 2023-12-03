@@ -4,6 +4,8 @@ namespace Mr4Lc\VietQr\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Mr4Lc\VietQr\Models\ForUser\VietqrInformation as ForUserVietqrInformation;
+use Mr4Lc\VietQr\VietQrConsts;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use PHPZxing\PHPZxingDecoder;
 
@@ -11,28 +13,39 @@ class VietqrInformation extends Model
 {
     use HasFactory;
 
-    const MESSAGE_PREFIX = '0107NPS68690819';
-    const MESSAGE_LENGTH = 34;
-    const MESSAGE_PAD = ' ';
-    const CURRENCY_CODE = '704';
-    const COUNTRY_CODE = 'VN';
-
+    protected $guarded = [];
     protected $table = 'vietqr_informations';
 
-    /**
-     * VietQR format
-     * message length: 19
-     *
-     * @var string
-     */
-    protected $vietqr_format = '00020101021238:consumer_account_information53:currency_code54:amount58:country_code62:message';
-    protected $vietqr_hash = '63:crc';
+    public function bank()
+    {
+        return $this->belongsTo(VietqrBank::class, 'vietqr_bank_id', 'id');
+    }
 
-    public function createCRC($str, $type = 'CRC-CCITT (0xFFFF)')
+    public function serviceCode()
+    {
+        return $this->belongsTo(VietqrServiceCode::class, 'vietqr_service_code_id', 'id');
+    }
+
+    public static function AddData($id, $data, $template = false)
+    {
+        if (!isset($data) || strlen($data) === 0) {
+            return '';
+        }
+        $result = $id;
+        if ($template) {
+            $result = $result . $data;
+        } else {
+            $data_length = str_pad(strlen($data), 2, '0', STR_PAD_LEFT);
+            $result = $result . $data_length . $data;
+        }
+
+        return $result;
+    }
+
+    public function createCRC($str, $type = VietQrConsts::StandardCRC)
     {
         switch ($type) {
-            case 'CRC-CCITT (0xFFFF)':
-                // The PHP version of the JS str.charCodeAt(i)
+            case VietQrConsts::StandardCRC:
                 function charCodeAt($str, $i)
                 {
                     return ord(substr($str, $i, 1));
@@ -82,59 +95,106 @@ class VietqrInformation extends Model
 
     public static function CleanMessage($string)
     {
-        return preg_replace('/[^A-Za-z0-9\- ]/', '-', $string); // Removes special chars.
+        return preg_replace('/[^A-Za-z0-9\- ]/', '-', $string);
     }
 
-    public function createPaymentCode($amount, $message, $currency = '704', $country = 'VN')
+    public function generateConsumerAccountInformation()
     {
+        $result = '';
 
-        $consumer_account_information = $this->consumer_account_information;
-        $consumer_account_information_length = str_pad(strlen($consumer_account_information), 2, '0', STR_PAD_LEFT);
-        $consumer_account_information = $consumer_account_information_length . $consumer_account_information;
+        $aid = static::AddData(VietQrConsts::AID, config('mr4vietqr.defaut.aig', VietQrConsts::AID_GUID));
+        $serviceCode = static::AddData(VietQrConsts::ServiceCodeId, $this->serviceCode->value);
 
-        $currency_code = $currency;
-        $currency_code_length = str_pad(strlen($currency_code), 2, '0', STR_PAD_LEFT);
-        $currency_code = $currency_code_length . $currency_code;
+        $bank = static::AddData(VietQrConsts::BankId, $this->bank->bin);
+        $account = static::AddData(VietQrConsts::BankAccount, $this->account);
+        $beneficiaryAccount = static::AddData(VietQrConsts::BankAccount, $bank . $account);
 
-        $amount = $amount;
-        $amount_length = str_pad(strlen($amount), 2, '0', STR_PAD_LEFT);
-        $amount = $amount_length . $amount;
+        $result = $aid . $beneficiaryAccount . $serviceCode;
+        return $result;
+    }
 
-        $country = $country;
-        $country_length = str_pad(strlen($country), 2, '0', STR_PAD_LEFT);
-        $country = $country_length . $country;
+    public function generateMessageData($message, $transactionId = null)
+    {
+        $result = '';
+        $result = $result . static::AddData(VietQrConsts::AdditionalDataFieldBillNumberId, $transactionId);
+        $result = $result . static::AddData(VietQrConsts::AdditionalDataFieldPurposeOfTransactionId, $message);;
+        return $result;
+    }
 
-        $message = static::VietnameseToASCII($message);
-        $message = static::CleanMessage($message);
-        $message = mb_convert_encoding($message, "ASCII");
-        $message = str_replace("?", '-', $message);
-        $message = substr(static::MESSAGE_PREFIX . $message, 0, static::MESSAGE_LENGTH);
-        $message = str_pad($message, static::MESSAGE_LENGTH, static::MESSAGE_PAD, STR_PAD_RIGHT);
-        $message_length = str_pad(strlen($message), 2, '0', STR_PAD_LEFT);
-        $message = $message_length . $message;
+    public static function StandardValidatedData($validated)
+    {
+        if (!array_key_exists('transaction_amount', $validated) || $validated['transaction_amount'] === null) {
+            $validated['transaction_amount'] = null;
+        }
+        if (!array_key_exists('message', $validated) || $validated['message'] === null) {
+            $validated['message'] = null;
+        }
+        if (!array_key_exists('transaction_id', $validated) || $validated['transaction_id'] === null) {
+            $validated['transaction_id'] = null;
+        }
+        if (!array_key_exists('point_of_initiation_method', $validated) || $validated['point_of_initiation_method'] === null) {
+            $validated['point_of_initiation_method'] = VietQrConsts::PointOfInitiationMethodQRDynamic;
+        }
+        if (!array_key_exists('currency', $validated) || $validated['currency'] === null) {
+            $validated['currency'] = config('mr4vietqr.defaut.transaction_currency', VietQrConsts::CurrencyCodeVND);
+        }
+        if (!array_key_exists('country', $validated) || $validated['country'] === null) {
+            $validated['country'] = config('mr4vietqr.defaut.country_code', VietQrConsts::CountryCodeVN);
+        }
+        if (!array_key_exists('logo', $validated) || $validated['logo'] === null) {
+            $validated['logo'] = null;
+        }
+        if (!array_key_exists('logo_size', $validated) || $validated['logo_size'] === null) {
+            $validated['logo_size'] = config('mr4vietqr.defaut.logo_size', VietQrConsts::LogoSize);
+        }
+        return $validated;
+    }
 
-        $result = __($this->vietqr_format, [
-            'consumer_account_information' => $consumer_account_information,
-            'currency_code' => $currency_code,
-            'amount' => $amount,
-            'country_code' => $country,
-            'message' => $message,
-        ]);
+    public function createPaymentCodeFromArray($validated)
+    {
+        return $this->createPaymentCode(
+            $validated['transaction_amount'],
+            $validated['message'],
+            $validated['transaction_id'],
+            $validated['point_of_initiation_method'],
+            $validated['currency'],
+            $validated['country']
+        );
+    }
 
+    public function createPaymentCode($amount, $message, $transactionId = null, $point_of_initiation_method = VietQrConsts::PointOfInitiationMethodQRDynamic, $currency = VietQrConsts::CurrencyCodeVND, $country = VietQrConsts::CountryCodeVN)
+    {
+        $result = '';
+        $result = $result . static::AddData(VietQrConsts::PayloadFormatIndicatorId, config('mr4vietqr.payload_format_indicator', VietQrConsts::PayloadFormatIndicator));
+        $result = $result . static::AddData(VietQrConsts::PointOfInitiationMethodId, $point_of_initiation_method);
+        $result = $result . static::AddData(VietQrConsts::MerchantAccountInformationId, $this->generateConsumerAccountInformation());
+        $result = $result . static::AddData(VietQrConsts::TransactionCurrencyId, $currency);
+        $result = $result . static::AddData(VietQrConsts::TransactionAmountId, $amount);
+        $result = $result . static::AddData(VietQrConsts::CountryCodeId, $country);
+        $result = $result . static::AddData(VietQrConsts::AdditionalDataFieldTemplateId, $this->generateMessageData($message, $transactionId));
         $crc = $this->createCRC($result);
-        $crc_length = str_pad(strlen($crc), 2, '0', STR_PAD_LEFT);
-        $crc = $crc_length . $crc;
+        $result = $result . static::AddData(VietQrConsts::CRCId, $crc);
 
-        $crc = __($this->vietqr_hash, [
-            'crc' => $crc,
-        ]);
-
-        return $result . $crc;
+        return $result;
     }
 
-    public function generatePaymentCode($amount, $message, $currency = '704', $country = 'VN', $logo = null, $logo_size = 0.2)
+    public function generatePaymentCodeFromArray($validated)
     {
-        $code = $this->createPaymentCode($amount, $message, $currency, $country);
+        return $this->generatePaymentCode(
+            $validated['transaction_amount'],
+            $validated['message'],
+            $validated['transaction_id'],
+            $validated['point_of_initiation_method'],
+            $validated['currency'],
+            $validated['country'],
+            $validated['logo'],
+            $validated['logo_size']
+        );
+    }
+
+    public function generatePaymentCode($amount, $message, $transactionId = null, $point_of_initiation_method = VietQrConsts::PointOfInitiationMethodQRDynamic, $currency = VietQrConsts::CurrencyCodeVND, $country = VietQrConsts::CountryCodeVN, $logo = null, $logo_size = VietQrConsts::LogoSize)
+    {
+        $code = $this->createPaymentCode($amount, $message, $transactionId, $point_of_initiation_method, $currency, $country);
         if (isset($logo)) {
             $qr = QrCode::format('png')->size(500)->merge($logo, $logo_size, true)->generate($code);
         } else {
@@ -149,7 +209,6 @@ class VietqrInformation extends Model
     public static function VietQrDataAnalytic($str)
     {
         $datas = [];
-        $datas['raw'] = $str;
         $tmp = $str;
         while (strlen($tmp) > 0) {
             $key = substr($tmp, 0, 2);
@@ -158,21 +217,135 @@ class VietqrInformation extends Model
             $datas[$key] = $value;
             $tmp = substr($tmp, 2 + 2 + $length);
         }
-        return $datas;
+        $vietQr = new VietqrInformation();
+        $vietQr->datas = $str;
+
+        if (key_exists('00', $datas)) {
+            $vietQr->payload_format_indicator = $datas['00'];
+        }
+        if (key_exists('01', $datas)) {
+            $vietQr->point_of_initiation_method = $datas['01'];
+            $vietQr->point_of_initiation_method_name = __('mr4lc-vietqr.point_of_initiation_methods.' . $datas['01']);
+        }
+        if (key_exists('38', $datas)) {
+            $vietQr->consumer_account_information = $datas['38'];
+            $consumerAccountInformationData = [];
+            $tmp = $vietQr->consumer_account_information;
+            while (strlen($tmp) > 0) {
+                $key = substr($tmp, 0, 2);
+                $length = substr($tmp, 2, 2);
+                $value = substr($tmp, 4, $length);
+                $consumerAccountInformationData[$key] = $value;
+                $tmp = substr($tmp, 2 + 2 + $length);
+            }
+            $vietQr->consumer_account_information_data = $consumerAccountInformationData;
+            if (key_exists('00', $consumerAccountInformationData)) {
+                $vietQr->aig = $consumerAccountInformationData['00'];
+            }
+            if (key_exists('01', $consumerAccountInformationData)) {
+                $vietQr->beneficiary_account = $consumerAccountInformationData['01'];
+
+                $beneficiaryAccountData = [];
+                $tmp = $vietQr->beneficiary_account;
+                while (strlen($tmp) > 0) {
+                    $key = substr($tmp, 0, 2);
+                    $length = substr($tmp, 2, 2);
+                    $value = substr($tmp, 4, $length);
+                    $beneficiaryAccountData[$key] = $value;
+                    $tmp = substr($tmp, 2 + 2 + $length);
+                }
+                $vietQr->beneficiary_account_data = $beneficiaryAccountData;
+                if (key_exists('00', $beneficiaryAccountData)) {
+                    $vietQr->vietqr_bank_bin = $beneficiaryAccountData['00'];
+                    $vietQr->bank = VietqrBank::where('bin', $vietQr->vietqr_bank_bin)->first();
+                    if (isset($vietQr->bank)) {
+                        $vietQr->vietqr_bank_id = $vietQr->bank->id;
+                    }
+                }
+                if (key_exists('01', $beneficiaryAccountData)) {
+                    $vietQr->account = $beneficiaryAccountData['01'];
+                }
+            }
+            if (key_exists('02', $consumerAccountInformationData)) {
+                $vietQr->service_code = $consumerAccountInformationData['02'];
+                $vietQr->serviceCode = VietqrServiceCode::where('value', $vietQr->service_code)->first();
+                if (isset($vietQr->serviceCode)) {
+                    $vietQr->vietqr_service_code_id = $vietQr->serviceCode->id;
+                }
+                $vietQr->service_code_name = __('mr4lc-vietqr.service_codes.' . $consumerAccountInformationData['02']);;
+            }
+        }
+        if (key_exists('53', $datas)) {
+            $vietQr->transaction_currency = $datas['53'];
+            $vietQr->transaction_currency_name = config('mr4vietqr.transaction_currencies.' . $vietQr->transaction_currency, null);
+        }
+        if (key_exists('54', $datas)) {
+            $vietQr->transaction_amount = floatval($datas['54']);
+        }
+        if (key_exists('58', $datas)) {
+            $vietQr->country_code = $datas['58'];
+            $vietQr->country_code_name = config('mr4vietqr.country_codes.' . $vietQr->country_code, null);
+        }
+        if (key_exists('62', $datas)) {
+            $vietQr->additional_data_field = $datas['62'];
+            $additionalDataFieldData = [];
+            $tmp = $vietQr->additional_data_field;
+            while (strlen($tmp) > 0) {
+                $key = substr($tmp, 0, 2);
+                $length = substr($tmp, 2, 2);
+                $value = substr($tmp, 4, $length);
+                $additionalDataFieldData[$key] = $value;
+                $tmp = substr($tmp, 2 + 2 + $length);
+            }
+            $vietQr->additional_data_field_data = $additionalDataFieldData;
+            if (key_exists('01', $additionalDataFieldData)) {
+                $vietQr->transaction_id = $additionalDataFieldData['01'];
+            }
+            if (key_exists('08', $additionalDataFieldData)) {
+                $vietQr->message = $additionalDataFieldData['08'];
+            }
+        }
+        if (key_exists('63', $datas)) {
+            $vietQr->crc = $datas['63'];
+        }
+
+        $result = ForUserVietqrInformation::where('account', $vietQr->account)->where('vietqr_bank_id', $vietQr->vietqr_bank_id)->where('vietqr_service_code_id', $vietQr->vietqr_service_code_id)->with(['bank', 'serviceCode'])->first();
+        if (!isset($result)) {
+            $result = new ForUserVietqrInformation([
+                'account' => $vietQr->account,
+                'vietqr_service_code_id' => $vietQr->vietqr_service_code_id,
+                'vietqr_bank_id' => $vietQr->vietqr_bank_id,
+                'datas' => $vietQr->datas,
+            ]);
+            $result->bank = $vietQr->bank;
+            $result->serviceCode = $vietQr->serviceCode;
+        }
+
+        $result->message = $vietQr->message;
+        $result->transaction_amount = $vietQr->transaction_amount;
+        $result->transaction_id = $vietQr->transaction_id;
+        $result->transaction_currency = $vietQr->transaction_currency;
+        $result->country_code = $vietQr->country_code;
+        $result->point_of_initiation_method = $vietQr->point_of_initiation_method;
+
+
+        return $result;
     }
 
-    public static function GetVietQrInformation($file, $fileName = 'UNDEFINED')
+    public static function GetVietQrInformation($data)
+    {
+        $vietQr = static::VietQrDataAnalytic($data);
+        return $vietQr;
+    }
+
+    public static function GetVietQrInformationFromImage($file, $fileName = VietQrConsts::FileName)
     {
         $obj = new static();
         $decoder = new PHPZxingDecoder();
         $data = $decoder->decode($file);
         if ($data->isFound()) {
             $value = $data->getImageValue();
-            $vietQr = static::VietQrDataAnalytic($value);
-            $obj->datas = json_encode($vietQr);
-            $obj->name = $fileName;
-            $obj->consumer_account_information = $vietQr["38"];
-            $obj->datas = json_encode($vietQr);
+            $obj = static::VietQrDataAnalytic($value);
         } else {
             $obj = null;
         }

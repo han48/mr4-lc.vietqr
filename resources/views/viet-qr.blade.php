@@ -22,7 +22,7 @@
         <label for="{{ $prefix }}transaction_currency">{{ __('mr4lc-vietqr.transaction_currency') }}</label>
         <select name="transaction_currency" id="{{ $prefix }}transaction_currency" class="form-control" onselect="LoadQrCode('{{ $prefix }}')">
             @php
-                $items = __('mr4lc-vietqr.transaction_currencies');
+                $items = config('mr4vietqr.transaction_currencies', []);
             @endphp
             @foreach ($items as $key => $value)
                 <option value="{{ $key }}" {{ $key . "" === config('mr4vietqr.defaut.transaction_currency') ? 'selected' : '' }}>{{ $value }}</option>
@@ -33,16 +33,20 @@
         <label for="{{ $prefix }}country_code">{{ __('mr4lc-vietqr.country_code') }}</label>
         <select name="country_code" id="{{ $prefix }}country_code" class="form-control" onselect="LoadQrCode('{{ $prefix }}')">
             @php
-                $items = __('mr4lc-vietqr.country_codes');
+                $items = config('mr4vietqr.country_codes', []);
             @endphp
             @foreach ($items as $key => $value)
-                <option value="{{ $key }}" {{ $key . "" === config('mr4vietqr.defaut.country_code') ? 'selected' : '' }}>{{ $value }}</option>
+                <option value="{{ $key }}" {{ $key . "" === config('mr4vietqr.defaut.country_code') ? 'selected' : '' }}>{{ __('mr4lc-vietqr.country_codes.' . $value) }}</option>
             @endforeach
         </select>
     </div>
     <div class="form-group">
         <label for="{{ $prefix }}transaction_amount">{{ __('mr4lc-vietqr.transaction_amount') }}</label>
         <input type="number" name="transaction_amount" id="{{ $prefix }}transaction_amount" class="form-control" onchange="LoadQRCode('{{ $prefix }}')">
+    </div>
+    <div class="form-group">
+        <label for="{{ $prefix }}transaction_id">{{ __('mr4lc-vietqr.transaction_id') }}</label>
+        <input type="text" name="transaction_id" id="{{ $prefix }}transaction_id" class="form-control" onchange="LoadQRCode('{{ $prefix }}')">
     </div>
     <div class="form-group">
         <label for="{{ $prefix }}message">{{ __('mr4lc-vietqr.message') }}</label>

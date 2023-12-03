@@ -11,15 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vietqr_informations', function (Blueprint $table) {
+        Schema::create('vietqr_service_codes', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('account');
-            $table->foreignId('vietqr_service_code_id');
-            $table->foreignId('vietqr_bank_id');
-            $table->text('datas')->nullable();
+            $table->string('value');
             $table->boolean('status')->default(1);
-            $table->string('hash_type')->default('CRC-CCITT (0xFFFF)');
             $table->timestamps();
         });
     }
@@ -29,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vietqr_informations');
+        Schema::dropIfExists('vietqr_service_codes');
     }
 };

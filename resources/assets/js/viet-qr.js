@@ -1,24 +1,25 @@
 function LoadQRCode(prefix) {
-    let inputAccountId, inputTransactionCurrency, inputCountryCode, inputTransactionAmount, inputMessage, divVietqrImage
+    let inputAccountId, inputTransactionCurrency, inputCountryCode, inputTransactionAmount, inputTransactionId, inputMessage, divVietqrImage
 
     inputAccountId = document.getElementById(prefix + 'account_id')
     inputTransactionCurrency = document.getElementById(prefix + 'transaction_currency')
     inputCountryCode = document.getElementById(prefix + 'country_code')
     inputTransactionAmount = document.getElementById(prefix + 'transaction_amount')
+    inputTransactionId = document.getElementById(prefix + 'transaction_id')
     inputMessage = document.getElementById(prefix + 'message')
     divVietqrImage = document.getElementById(prefix + 'vietqr-image')
 
     if (inputAccountId.value.length === 0) {
-        return;
+        return
     }
     if (inputTransactionCurrency.value.length === 0) {
-        return;
+        return
     }
     if (inputCountryCode.value.length === 0) {
-        return;
+        return
     }
     if (inputTransactionAmount.value.length === 0) {
-        return;
+        return
     }
 
     var formData = new FormData()
@@ -26,6 +27,7 @@ function LoadQRCode(prefix) {
     formData.append("transaction_currency", inputTransactionCurrency.value)
     formData.append("country_code", inputCountryCode.value)
     formData.append("transaction_amount", inputTransactionAmount.value)
+    formData.append("transaction_id", inputTransactionId.value)
     formData.append("message", inputMessage.value)
 
     var xhr = new XMLHttpRequest()
@@ -61,20 +63,62 @@ function GetConsumerAccountInformation(ctrl, id, prefix) {
                 const response = JSON.parse(xhr.responseText)
                 if (xhr.status == 200) {
                     resultContainer.innerHTML = ''
-                    let input = document.getElementById(id)
-                    if (undefined === input || null === input) {
-                        input = document.createElement('input')
-                        input.id = id
-                        input.type = 'hidden'
-                        resultContainer.appendChild(input)
-                    }
-                    input.value = response.data.consumer_account_information
+
+                    const inputIds = [
+                        '_bank-code',
+                        '_bank-name',
+                        '_bank-shortName',
+                        '_bank-bin',
+                        '_bank-logo',
+                        '_account',
+                        '_service_code-value',
+                        '_point_of_initiation_method',
+                        '_country_code',
+                        '_transaction_amount',
+                        '_transaction_id',
+                        '_transaction_currency',
+                        '_message',
+                    ]
+
+                    inputIds.forEach((key) => {
+                        let inputId = id + key
+                        let input = document.getElementById(inputId)
+                        if (undefined === input || null === input) {
+                            input = document.createElement('input')
+                            input.id = inputId
+                            input.type = 'hidden'
+                            resultContainer.appendChild(input)
+                        }
+                        let name = key.substring(1)
+                        try {
+                            if (name.indexOf('-') > 0) {
+                                name = name.split('-')
+                                let tmpValue = response.data[name[0]]
+                                if (tmpValue) {
+                                    input.value = tmpValue[name[1]]
+                                }
+                            } else {
+                                input.value = response.data[name]
+                            }
+                        } catch (ex) {
+                            console.log(ex)
+                            input.value = ex.message
+                        }
+                        if (input.value && key === '_bank-logo') {
+                            console.log(inputId + "_img")
+                            let img = document.getElementById(inputId + "_img")
+                            if (img) {
+                                img.src = input.value
+                            }
+                        }
+                    })
+                    console.log(response.data)
                 } else {
                     resultContainer.innerHTML = response.data
                 }
             }
         }
-        xhr.open("POST", `${location.origin}/api/consumer-account-information`, true)
+        xhr.open("POST", `${location.origin}/api/vietqr_detech`, true)
         xhr.send(formData)
     }
 }

@@ -16,6 +16,8 @@ Note:
 ```bash
 composer require mr4-lc/vietqr
 php artisan vendor:publish --tag=mr4-lc-vietqr --force
+php artisan migrate
+php artisan vietqr:seed 
 ```
 
 ## Configuration
@@ -31,6 +33,7 @@ return [
 
 ## Database
 Table vietqr_informations
+Table vietqr_banks
 
 ## Usage
 ```blade

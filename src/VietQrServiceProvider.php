@@ -55,7 +55,17 @@ class VietQrServiceProvider extends ServiceProvider
             );
         }
 
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Mr4Lc\VietQr\Console\Commands\SeedCommand::class,
+                \Mr4Lc\VietQr\Console\Commands\UpdateBanksCommand::class,
+                \Mr4Lc\VietQr\Console\Commands\UpdateServiceCodesCommand::class,
+            ]);
+        }
+
         Route::post('api/vietqr', [VietQrController::class, 'generateVietQr'])->name('mr4.lc.vietqr.generate');
-        Route::post('api/consumer-account-information', [VietQrController::class, 'getConsumerAccountInformation'])->name('mr4.lc.vietqr.consumer_account_information.get');
+        Route::post('api/vietqr_encode', [VietQrController::class, 'generateVietQrEncode'])->name('mr4.lc.vietqr.generate');
+        Route::post('api/vietqr_decode', [VietQrController::class, 'generateVietQrDecode'])->name('mr4.lc.vietqr.consumer_account_information.get');
+        Route::post('api/vietqr_detech', [VietQrController::class, 'generateVietQrDetech'])->name('mr4.lc.vietqr.consumer_account_information.get');
     }
 }
