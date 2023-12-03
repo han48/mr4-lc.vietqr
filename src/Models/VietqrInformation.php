@@ -4,7 +4,9 @@ namespace Mr4Lc\VietQr\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Mr4Lc\VietQr\Models\ForUser\VietqrBank;
 use Mr4Lc\VietQr\Models\ForUser\VietqrInformation as ForUserVietqrInformation;
+use Mr4Lc\VietQr\Models\ForUser\VietqrServiceCode;
 use Mr4Lc\VietQr\VietQrConsts;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use PHPZxing\PHPZxingDecoder;
