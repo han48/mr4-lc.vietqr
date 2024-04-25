@@ -65,7 +65,7 @@ class VietQrServiceProvider extends ServiceProvider
 
         Route::post('api/vietqr', [VietQrController::class, 'generateVietQr'])->name('mr4.lc.vietqr.generate');
         Route::post('api/vietqr_encode', [VietQrController::class, 'generateVietQrEncode'])->name('mr4.lc.vietqr.generate');
-        Route::post('api/vietqr_decode', [VietQrController::class, 'generateVietQrDecode'])->name('mr4.lc.vietqr.consumer_account_information.get');
-        Route::post('api/vietqr_detech', [VietQrController::class, 'generateVietQrDetech'])->name('mr4.lc.vietqr.consumer_account_information.get');
+        Route::post('api/vietqr_decode', [VietQrController::class, 'generateVietQrDecode'])->name('mr4.lc.vietqr.consumer_account_information.decode');
+        Route::post('api/vietqr_detech', [VietQrController::class, 'generateVietQrDetech'])->name('mr4.lc.vietqr.consumer_account_information.detech');
     }
 }

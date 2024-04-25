@@ -3,9 +3,7 @@
 namespace Mr4Lc\VietQr\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
-use Laravel\Prompts\Output\ConsoleOutput;
-use Mr4Lc\VietQr\Models\VietqrBank;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Mr4Lc\VietQr\Models\VietqrServiceCode;
 
 class UpdateServiceCodesCommand extends Command

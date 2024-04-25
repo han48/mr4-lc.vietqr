@@ -4,7 +4,7 @@ namespace Mr4Lc\VietQr\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use Laravel\Prompts\Output\ConsoleOutput;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Mr4Lc\VietQr\Models\VietqrBank;
 
 class UpdateBanksCommand extends Command
