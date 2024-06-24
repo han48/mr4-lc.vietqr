@@ -3,6 +3,7 @@
 namespace Mr4Lc\VietQr\Console\Commands;
 
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Mr4Lc\VietQr\Models\VietqrServiceCode;
 
 class UpdateServiceCodesCommand extends Command
@@ -38,18 +39,23 @@ class UpdateServiceCodesCommand extends Command
      */
     public function handle()
     {
+        $output = new ConsoleOutput();
+        $output->writeln("Update VietQR service code: Start");
         if (VietqrServiceCode::where('name', 'account')->count() === 0) {
             VietqrServiceCode::insert([
                 'name' => 'account',
                 'value' => 'QRIBFTTA',
             ]);
+            $output->writeln("    Insert service code: account");
         }
         if (VietqrServiceCode::where('name', 'card')->count() === 0) {
             VietqrServiceCode::insert([
                 'name' => 'card',
                 'value' => 'QRIBFTTC',
             ]);
+            $output->writeln("    Insert service code: card");
         }
+        $output->writeln("Update VietQR service code: End");
         return 0;
     }
 }
