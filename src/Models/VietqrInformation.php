@@ -174,8 +174,9 @@ class VietqrInformation extends Model
         $result = $result . static::AddData(VietQrConsts::TransactionAmountId, $amount);
         $result = $result . static::AddData(VietQrConsts::CountryCodeId, $country);
         $result = $result . static::AddData(VietQrConsts::AdditionalDataFieldTemplateId, $this->generateMessageData($message, $transactionId));
+        $result = $result . substr(static::AddData(VietQrConsts::CRCId, "0000"), 0, -4);
         $crc = $this->createCRC($result);
-        $result = $result . static::AddData(VietQrConsts::CRCId, $crc);
+        $result = $result . $crc;
 
         return $result;
     }
