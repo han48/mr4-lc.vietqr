@@ -135,7 +135,7 @@ class VietqrInformation extends Model
             $validated['transaction_id'] = null;
         }
         if (!array_key_exists('point_of_initiation_method', $validated) || $validated['point_of_initiation_method'] === null) {
-            $validated['point_of_initiation_method'] = VietQrConsts::PointOfInitiationMethodQRDynamic;
+            $validated['point_of_initiation_method'] = VietQrConsts::PointOfInitiationMethodQRStatic;
         }
         if (!array_key_exists('currency', $validated) || $validated['currency'] === null) {
             $validated['currency'] = config('mr4vietqr.defaut.transaction_currency', VietQrConsts::CurrencyCodeVND);
@@ -164,7 +164,7 @@ class VietqrInformation extends Model
         );
     }
 
-    public function createPaymentCode($amount, $message, $transactionId = null, $point_of_initiation_method = VietQrConsts::PointOfInitiationMethodQRDynamic, $currency = VietQrConsts::CurrencyCodeVND, $country = VietQrConsts::CountryCodeVN)
+    public function createPaymentCode($amount, $message, $transactionId = null, $point_of_initiation_method = VietQrConsts::PointOfInitiationMethodQRStatic, $currency = VietQrConsts::CurrencyCodeVND, $country = VietQrConsts::CountryCodeVN)
     {
         $result = '';
         $result = $result . static::AddData(VietQrConsts::PayloadFormatIndicatorId, config('mr4vietqr.payload_format_indicator', VietQrConsts::PayloadFormatIndicator));
@@ -195,7 +195,7 @@ class VietqrInformation extends Model
         );
     }
 
-    public function generatePaymentCode($amount, $message, $transactionId = null, $point_of_initiation_method = VietQrConsts::PointOfInitiationMethodQRDynamic, $currency = VietQrConsts::CurrencyCodeVND, $country = VietQrConsts::CountryCodeVN, $logo = null, $logo_size = VietQrConsts::LogoSize)
+    public function generatePaymentCode($amount, $message, $transactionId = null, $point_of_initiation_method = VietQrConsts::PointOfInitiationMethodQRStatic, $currency = VietQrConsts::CurrencyCodeVND, $country = VietQrConsts::CountryCodeVN, $logo = null, $logo_size = VietQrConsts::LogoSize)
     {
         $code = $this->createPaymentCode($amount, $message, $transactionId, $point_of_initiation_method, $currency, $country);
         if (isset($logo)) {
