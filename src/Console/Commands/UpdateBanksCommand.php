@@ -42,7 +42,7 @@ class UpdateBanksCommand extends Command
     {
         $output = new ConsoleOutput();
         $output->writeln("Update VietQR bank list: Start");
-        $response = Http::get(config('mr4vietqr.api.banks.url', 'https://api.vietqr.io/v2/banks'));
+        $response = Http::withOptions(['verify' => false])->get(config('mr4vietqr.api.banks.url', 'https://api.vietqr.io/v2/banks'));
         $data = $response->json('data');
         foreach ($data as $key => $value) {
             $columns = config('mr4vietqr.api.banks.columns', ['code', 'bin']);
